@@ -145,9 +145,6 @@ function AdminDashboard({ token }) {
             <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <h1 className="mb-0 border-0 p-0">Manage Products</h1>
                 <div className="d-flex gap-2">
-                    <Badge bg="success" style={{ fontSize: '1rem', padding: '10px 15px', borderRadius: '30px' }}>
-                        Admin Panel
-                    </Badge>
                     <Button 
                         variant="success" 
                         className="rounded-pill px-4 fw-bold shadow-sm" 
@@ -174,7 +171,7 @@ function AdminDashboard({ token }) {
                 <Col md={6}>
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: '#fff3cd' }}>
                         <Card.Body className="text-center">
-                            <h6 className="text-warning text-uppercase fw-bold mb-1" style={{ color: '#856404 !important' }}>Low Stock</h6>
+                            <h6 className="text-warning text-uppercase fw-bold mb-1" style={{ color: '#856404 !important' }}>Low Stock (≤10)</h6>
                             <h3 className="mb-0 fw-bold text-dark">{stats.lowStock}</h3>
                         </Card.Body>
                     </Card>

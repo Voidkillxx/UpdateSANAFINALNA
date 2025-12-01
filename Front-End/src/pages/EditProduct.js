@@ -100,6 +100,16 @@ const EditProduct = () => {
             {processing && <LoadingModal />}
 
             <div className="ap-container">
+                {/* --- UPDATED BACK BUTTON --- */}
+                <button 
+                    className="btn btn-link text-decoration-none ps-0 mb-4 d-flex align-items-center fw-medium text-dark"
+                    style={{ fontSize: '1.1rem' }}
+                    onClick={() => navigate("/admin")}
+                    disabled={processing}
+                >
+                    <i className="bi bi-arrow-left me-2"></i> Back
+                </button>
+
                 <h2 className="ap-header">Edit Product: {form.name}</h2>
                 <div className="ap-card">
                     <form id="edit-product-form" className="ap-form-grid" onSubmit={handleSubmit}>

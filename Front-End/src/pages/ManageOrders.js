@@ -138,9 +138,6 @@ const ManageOrders = ({ showAlert }) => {
         <div className="order-history-container" style={{ maxWidth: '1200px' }}>
             <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <h1 className="mb-0 border-0 p-0">Manage Orders</h1>
-                <Badge bg="success" style={{ fontSize: '1rem', padding: '10px 15px', borderRadius: '30px' }}>
-                    Admin Panel
-                </Badge>
             </div>
 
             {/* --- KPI CARDS --- */}
