@@ -42,7 +42,7 @@ const ManageUsers = ({ showAlert }) => {
 
     // --- PAGINATION STATE ---
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(21); 
+    const [itemsPerPage] = useState(51); 
 
     // Stats
     const [counts, setCounts] = useState({ total: 0, admins: 0 });
