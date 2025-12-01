@@ -1,0 +1,38 @@
+.checkout-container {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.checkout-summary-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    position: sticky;
+    top: 20px; 
+}
+
+.summary-item-image {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-right: 15px;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.summary-item-details {
+    flex-grow: 1;
+    margin-left: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.order-receipt {
+    text-align: center;
+    padding: 3rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+}

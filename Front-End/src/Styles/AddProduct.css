@@ -1,0 +1,139 @@
+/* AddProduct.css - New Design */
+
+/* Main page background */
+.ap-page-background {
+  min-height: 100vh;
+  background-color: #b8e6c9; /* Mint green background */
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Container */
+.ap-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Header title */
+.ap-header {
+  color: #4CAF50;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+/* White card */
+.ap-card {
+  background: #ffffff;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Form grid - two columns */
+.ap-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem 3rem;
+}
+
+/* Field wrapper */
+.ap-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+/* Labels - green color */
+.ap-label {
+  font-weight: 600;
+  color: #4CAF50;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+/* Input fields */
+.ap-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  background-color: #f9f9f9;
+}
+
+.ap-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  background-color: white;
+}
+
+/* Spacer for alignment */
+.ap-field-spacer {
+  height: 100%;
+  min-height: 2rem;
+}
+
+/* Buttons container */
+.ap-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  grid-column: 1 / -1; /* Span both columns */
+}
+
+/* Button base */
+.ap-btn {
+  padding: 0.8rem 2.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-size: 1rem;
+  min-width: 160px;
+}
+
+/* Create button - darker green */
+.ap-btn-create {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.ap-btn-create:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* Cancel button - lighter green */
+.ap-btn-cancel {
+  background-color: #66BB6A;
+  color: white;
+}
+
+.ap-btn-cancel:hover {
+  background-color: #5cb85c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ap-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .ap-actions {
+    flex-direction: column;
+  }
+  
+  .ap-btn {
+    width: 100%;
+  }
+}

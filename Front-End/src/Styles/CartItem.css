@@ -1,0 +1,116 @@
+/* CartItem.css */
+
+.cart-item-row {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1rem 0;
+    background-color: white;
+}
+
+.cart-item-row:last-child {
+    border-bottom: none;
+}
+
+/* Image Wrapper */
+.cart-item-img-wrapper {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.cart-item-img-wrapper img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* Text Styles */
+.cart-item-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    color: #333;
+}
+
+.cart-item-unit-price {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.cart-item-total {
+    font-size: 1.1rem;
+    color: #2e7d32; /* Green */
+}
+
+.cart-item-remove small {
+    font-weight: 600;
+    cursor: pointer;
+}
+.cart-item-remove:hover {
+    text-decoration: underline;
+}
+
+/* Qty Controls */
+.qty-btn {
+    padding: 0rem 0.5rem;
+    font-weight: bold;
+    line-height: 1.5;
+}
+.qty-val {
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* --- MOBILE RESPONSIVE FIXES --- */
+@media (max-width: 576px) {
+    .cart-item-row {
+        padding: 0.75rem 0;
+    }
+
+    /* Shrink Image */
+    .cart-item-img-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    /* Adjust Text Size */
+    .cart-item-name {
+        font-size: 0.9rem;
+        white-space: normal; /* Allow wrap if needed, or keep truncate */
+        line-height: 1.2;
+    }
+
+    .cart-item-unit-price {
+        font-size: 0.8rem;
+    }
+
+    /* Align Actions to Right */
+    .cart-item-actions {
+        align-items: flex-end !important;
+    }
+
+    /* Compact Qty Controls */
+    .qty-btn {
+        padding: 0 0.4rem;
+        font-size: 0.8rem;
+        height: 24px;
+        line-height: 1;
+    }
+    .qty-val {
+        font-size: 0.9rem;
+    }
+
+    /* Total & Remove */
+    .cart-item-total {
+        font-size: 1rem;
+    }
+    
+    .cart-item-remove {
+        font-size: 0.8rem;
+    }
+}

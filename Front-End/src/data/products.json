@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1,
+    "name": "Kopiko 3-in-1 Coffee (10 sachets)",
+    "price": 85.00,
+    "imageUrl": "/img/products/Kopiko_Brown_Coffee.png",
+    "description": "Instant 3-in-1 coffee mix, a popular and convenient choice for a quick coffee break.",
+    "categoryId": 1,
+    "stock": 10
+  },
+  {
+    "id": 2,
+    "name": "C2 Apple Green Tea (500ml)",
+    "price": 25.00,
+    "imageUrl": "/img/products/C2.png",
+    "description": "A refreshing ready-to-drink green tea beverage with a crisp apple flavor.",
+    "categoryId": 1,
+     "stock": 10
+  },
+  {
+    "id": 3,
+    "name": "Bear Brand Sterilized Milk (1L)",
+    "price": 90.00,
+    "imageUrl": "/img/products/BearBrand.png",
+    "description": "Fortified ready-to-drink sterilized milk, a staple in many Filipino households.",
+    "categoryId": 2,
+     "stock": 10
+  },
+  {
+    "id": 4,
+    "name": "Eden Processed Cheese Block (165g)",
+    "price": 60.00,
+    "imageUrl": "/img/products/Eden.png",
+    "description": "The classic creamy and salty processed cheese, perfect for sandwiches and pandesal.",
+    "categoryId": 2,
+     "stock": 10
+  },
+  {
+    "id": 5,
+    "name": "Oishi Prawn Crackers (Spicy Flavor)",
+    "price": 20.00,
+    "imageUrl": "/img/products/Oishi.png",
+    "description": "A favorite Filipino snack, these crackers are crunchy, savory, and have a spicy kick.",
+    "categoryId": 3,
+     "stock": 10
+  },
+  {
+    "id": 6,
+    "name": "Piattos Potato Crisps (Cheese Flavor)",
+    "price": 22.00,
+    "imageUrl": "/img/products/Piattos.png",
+    "description": "Thin, hexagonal potato crisps with a rich cheese flavor.",
+    "categoryId": 3,
+     "stock": 10
+  },
+  {
+    "id": 7,
+    "name": "Pandesal",
+    "price": 100.00,
+    "imageUrl": "/img/products/Pandesal.png",
+    "description": "A classic Filipino bread roll, soft and slightly sweet, perfect for breakfast.",
+    "categoryId": 4,
+     "stock": 10
+  },
+  {
+    "id": 8,
+    "name": "Cheese Ensaymada",
+    "price":99.00,
+    "imageUrl": "/img/products/Ensaymada.png",
+    "description": "A soft, sweet bread topped with butter, sugar, and grated cheese.",
+    "categoryId": 4,
+     "stock": 10
+  },
+  {
+    "id": 9,
+    "name": "San Miguel Pale Pilsen (320ml Bottle)",
+    "price": 45.00,
+    "imageUrl": "/img/products/SanMiguel.png",
+    "description": "The iconic Filipino pale lager, known for its balanced taste and refreshing finish.",
+    "categoryId": 1,
+     "stock": 10
+  }
+]
