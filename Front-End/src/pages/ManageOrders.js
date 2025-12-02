@@ -1,0 +1,340 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Spinner, Form, Row, Col, Card, Badge, Nav, Pagination, Button } from 'react-bootstrap'; 
+import { fetchOrders, updateOrderStatus } from '../utils/api';
+import '../Styles/OrderHistory.css'; 
+
+const formatToPesos = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+    }).format(amount);
+};
+
+// ADDED 'Return Requested' so Admin can filter/select it
+const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested'];
+const TERMINAL_STATES = ['Delivered', 'Cancelled'];
+
+const ManageOrders = ({ showAlert }) => { 
+    const [allOrders, setAllOrders] = useState([]); 
+    const [filteredOrders, setFilteredOrders] = useState([]); 
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // --- FILTERS ---
+    const [activeFilter, setActiveFilter] = useState('All'); 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+    // --- PAGINATION STATE ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10); 
+
+    // --- KPI STATS ---
+    const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, returnRequestCount: 0 });
+
+    const getOrders = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await fetchOrders(); 
+            const sortedData = data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            setAllOrders(sortedData);
+            
+            const revenue = sortedData
+                .filter(o => o.status === 'Delivered' || o.status === 'Completed') 
+                .reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
+            
+            const pending = sortedData.filter(o => o.status === 'Pending').length;
+            const returns = sortedData.filter(o => o.status === 'Return Requested').length;
+            
+            setStats({
+                totalRevenue: revenue,
+                pendingCount: pending,
+                returnRequestCount: returns
+            });
+
+        } catch (err) {
+            console.error(err);
+            showAlert('Failed to fetch orders.', 'danger');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [showAlert]);
+
+    useEffect(() => {
+        getOrders();
+    }, [getOrders]);
+
+    // --- FILTER LOGIC ---
+    useEffect(() => {
+        let result = allOrders;
+
+        if (activeFilter !== 'All') {
+            result = result.filter(order => order.status.toLowerCase() === activeFilter.toLowerCase());
+        }
+
+        if (searchTerm.trim() !== '') {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(order => 
+                order.id.toString().includes(term) ||
+                order.user?.first_name?.toLowerCase().includes(term) ||
+                order.user?.last_name?.toLowerCase().includes(term) ||
+                order.order_items.some(item => item.product?.product_name.toLowerCase().includes(term))
+            );
+        }
+
+        setFilteredOrders(result);
+        setCurrentPage(1); 
+    }, [allOrders, activeFilter, searchTerm]);
+
+    const handleStatusChange = async (orderId, newStatus) => {
+        setUpdatingOrderId(orderId);
+        try {
+            await updateOrderStatus(orderId, newStatus);
+            // Different messages based on action
+            if (newStatus === 'Cancelled') {
+                showAlert(`Order #${orderId} cancellation APPROVED.`, 'success');
+            } else if (newStatus === 'Shipped') {
+                showAlert(`Order #${orderId} cancellation REJECTED. Status reverted to Shipped.`, 'info');
+            } else {
+                showAlert(`Order #${orderId} updated to ${newStatus}`, 'success');
+            }
+            getOrders(); 
+        } catch (error) {
+            showAlert('Failed to update status', 'danger');
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    };
+
+    // --- PAGINATION LOGIC ---
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const renderOrderItems = (orderItems) => (
+        <ul className="order-items-list">
+            {orderItems.map(item => (
+                <li key={item.id} className="order-item-detail">
+                    <span className="item-name"><strong>{item.product?.product_name || 'Unknown'}</strong></span>
+                    <span className="item-qty">Qty: {item.quantity}</span>
+                    <span className="item-price text-dark">{formatToPesos(item.price_at_purchase)}</span>
+                </li>
+            ))}
+        </ul>
+    );
+
+    if (isLoading) {
+        return (
+            <div className="order-history-container d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+                <Spinner animation="border" variant="success" style={{ width: '3rem', height: '3rem' }} />
+            </div>
+        );
+    }
+
+    return (
+        <div className="order-history-container" style={{ maxWidth: '1200px' }}>
+            <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h1 className="mb-0 border-0 p-0">Manage Orders</h1>
+            </div>
+
+            {/* --- KPI CARDS --- */}
+            <Row className="mb-4 g-3">
+                <Col md={4}>
+                    <Card className="border-0 shadow-sm" style={{ backgroundColor: '#e8f5e9' }}>
+                        <Card.Body className="text-center">
+                            <h6 className="text-success text-uppercase fw-bold mb-1">Realized Revenue</h6>
+                            <h3 className="mb-0 fw-bold text-dark">{formatToPesos(stats.totalRevenue)}</h3>
+                            <small className="text-muted" style={{ fontSize: '0.75rem' }}>(Delivered Orders Only)</small>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={4}>
+                    {/* Highlight Cancellation Requests */}
+                    <Card className="border-0 shadow-sm" style={{ backgroundColor: stats.returnRequestCount > 0 ? '#ffebee' : '#fff3cd' }}>
+                        <Card.Body className="text-center">
+                            <h6 className={stats.returnRequestCount > 0 ? "text-danger text-uppercase fw-bold mb-1" : "text-warning text-uppercase fw-bold mb-1"}>
+                                {stats.returnRequestCount > 0 ? 'Cancellation Requests' : 'Pending Action'}
+                            </h6>
+                            <h3 className="mb-0 fw-bold text-dark">
+                                {stats.returnRequestCount > 0 ? stats.returnRequestCount : stats.pendingCount}
+                            </h3>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={4}>
+                    <Card className="border-0 shadow-sm bg-light">
+                        <Card.Body className="text-center">
+                            <h6 className="text-muted text-uppercase fw-bold mb-1">Total Orders</h6>
+                            <h3 className="mb-0 fw-bold text-dark">{allOrders.length}</h3>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+            
+            <div className="order-search-container">
+                <input 
+                    type="text" 
+                    className="order-search-input" 
+                    placeholder="Search by ID, Customer, or Product..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            <Nav variant="tabs" defaultActiveKey="All" className="order-status-tabs">
+                {['All', ...STATUS_OPTIONS].map((status) => (
+                    <Nav.Item key={status}>
+                        <Nav.Link 
+                            eventKey={status} 
+                            active={activeFilter === status} 
+                            onClick={() => setActiveFilter(status)}
+                        >
+                            {status} ({allOrders.filter(o => status === 'All' ? true : o.status === status).length})
+                        </Nav.Link>
+                    </Nav.Item>
+                ))}
+            </Nav>
+
+            {filteredOrders.length === 0 ? (
+                <div className="text-center py-5"><h4 className="text-muted">No orders found.</h4></div>
+            ) : (
+                <>
+                    <Row>
+                        {currentItems.map(order => {
+                            const isTerminal = TERMINAL_STATES.includes(order.status);
+                            const isRequest = order.status === 'Return Requested';
+
+                            return (
+                                <Col lg={6} key={order.id} className="mb-4">
+                                    <div className={`order-card h-100 ${isTerminal ? 'opacity-75' : ''}`} 
+                                         style={{ borderLeft: isRequest ? '5px solid #dc3545' : '1px solid #eaeaea' }}>
+                                        
+                                        <div className="order-header">
+                                            <div>
+                                                <h2>#{order.id}</h2>
+                                                <div className="small text-muted mt-1">
+                                                    <i className="bi bi-person-fill me-1"></i>
+                                                    {order.user ? `${order.user.first_name} ${order.user.last_name}` : 'Guest'}
+                                                </div>
+                                            </div>
+                                            <Badge bg={isRequest ? 'danger' : 'secondary'} className="order-status text-uppercase">
+                                                {order.status}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="px-4 py-2">
+                                            {isRequest && (
+                                                <div className="alert alert-danger py-2 mb-3 small d-flex align-items-center">
+                                                    <i className="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                                                    <div>User requested cancellation. Action required.</div>
+                                                </div>
+                                            )}
+
+                                            <div className="d-flex justify-content-between mb-2">
+                                                <span className="text-muted">Total:</span>
+                                                <strong className="text-success">{formatToPesos(order.total_amount)}</strong>
+                                            </div>
+                                            <div className="d-flex justify-content-between mb-2">
+                                                <span className="text-muted">Payment:</span>
+                                                <strong>{order.payment_type}</strong>
+                                            </div>
+                                            <div className="d-flex justify-content-between mb-2">
+                                                <span className="text-muted">Date:</span>
+                                                <span className="text-end" style={{ fontSize: '0.9rem' }}>{new Date(order.created_at).toLocaleString()}</span>
+                                            </div>
+                                            <div className="mb-3">
+                                                <span className="text-muted d-block mb-1">Shipping To:</span>
+                                                <div className="bg-light p-2 rounded small text-dark">
+                                                    {order.shipping_address}
+                                                </div>
+                                            </div>
+
+                                            <div className="border-top pt-3 mt-3">
+                                                <h6 className="fw-bold text-muted text-uppercase small mb-2">Items ({order.order_items.length})</h6>
+                                                {renderOrderItems(order.order_items)}
+                                            </div>
+                                        </div>
+
+                                        {/* --- ACTION FOOTER --- */}
+                                        <div className="order-card-footer mt-auto d-flex justify-content-between align-items-center bg-white border-top p-3">
+                                            
+                                            {isRequest ? (
+                                                // --- PRODUCTION STANDARD: APPROVE/REJECT BUTTONS ---
+                                                <div className="w-100 d-flex justify-content-between align-items-center">
+                                                    <span className="small text-danger fw-bold">Request Pending:</span>
+                                                    <div className="d-flex gap-2">
+                                                        <Button 
+                                                            variant="outline-secondary" 
+                                                            size="sm"
+                                                            className="rounded-pill fw-bold px-3"
+                                                            onClick={() => handleStatusChange(order.id, 'Shipped')}
+                                                            disabled={updatingOrderId === order.id}
+                                                        >
+                                                            Reject (Ship)
+                                                        </Button>
+                                                        <Button 
+                                                            variant="danger" 
+                                                            size="sm"
+                                                            className="rounded-pill fw-bold px-3"
+                                                            onClick={() => handleStatusChange(order.id, 'Cancelled')}
+                                                            disabled={updatingOrderId === order.id}
+                                                        >
+                                                            {updatingOrderId === order.id ? <Spinner size="sm" animation="border" /> : 'Approve Cancel'}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                // --- STANDARD DROPDOWN FOR NORMAL ORDERS ---
+                                                <>
+                                                    <span className="small text-muted fw-bold">Update Status:</span>
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        {updatingOrderId === order.id && <Spinner size="sm" animation="border" variant="success" />}
+                                                        <Form.Select 
+                                                            size="sm" 
+                                                            className="shadow-none"
+                                                            style={{ 
+                                                                width: 'auto', 
+                                                                borderRadius: '20px', 
+                                                                borderColor: '#28a745',
+                                                                fontWeight: '600',
+                                                                cursor: isTerminal ? 'not-allowed' : 'pointer'
+                                                            }}
+                                                            value={order.status}
+                                                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                                            disabled={updatingOrderId === order.id || isTerminal}
+                                                        >
+                                                            {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                        </Form.Select>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Col>
+                            );
+                        })}
+                    </Row>
+
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-center mt-4">
+                            <Pagination>
+                                <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
+                                {[...Array(totalPages)].map((_, index) => (
+                                    <Pagination.Item key={index + 1} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                                        {index + 1}
+                                    </Pagination.Item>
+                                ))}
+                                <Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
+                            </Pagination>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+};
+
+export default ManageOrders;

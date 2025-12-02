@@ -1,0 +1,28 @@
+/* ProductList.css */
+
+.product-list-container {
+  background-color: #f8f9fa;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.product-list-title {
+  color: #4CAF50;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-list-container {
+    padding: 1.5rem;
+  }
+
+  .product-list-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}

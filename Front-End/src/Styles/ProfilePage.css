@@ -1,0 +1,62 @@
+.profile-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.profile-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.profile-header {
+    background-color: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1.5rem;
+}
+
+.profile-title {
+    margin: 0;
+    font-weight: 700;
+    color: #333;
+}
+
+.security-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+}
+
+.security-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.input-otp {
+    max-width: 150px;
+    text-align: center;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.input-email-change {
+    max-width: 400px;
+}
+
+/* Ensure the eye icon button blends with the input */
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: #333;
+    border-color: #ced4da;
+}
+
+.gap-10 {
+    gap: 10px;
+}

@@ -1,0 +1,53 @@
+.category-filter-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.category-button {
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid #4CAF50;
+}
+
+.category-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+}
+
+.category-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+}
+
+.btn-success {
+  background-color: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.btn-outline-success {
+  background-color: white;
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.btn-outline-success:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .category-filter-container {
+    justify-content: flex-start;
+  }
+  
+  .category-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,21 @@
+.App {
+  background-color: #e8f5e9; 
+  min-height: 100vh;
+  position: relative; 
+}
+.main-content {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* ==========================================
+   Alert Pop-up Styles
+   ========================================== */
+.app-alert {
+  position: fixed; 
+  top: 80px;   
+  right: 20px;   
+  z-index: 1050;   
+  min-width: 250px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

@@ -1,0 +1,131 @@
+body {
+  background-color: #c9f1c9;
+  font-family: 'Poppins', sans-serif;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-card {
+  background-color: #fff;
+  width: 400px;
+  border-radius: 25px;
+  padding: 40px 30px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: #41a85f;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  color: #2f8449;
+}
+
+.store-name {
+  color: #41a85f;
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 20px;
+}
+
+.subtitle {
+  color: #41a85f;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.form-label {
+  display: block;
+  text-align: left;
+  color: #41a85f;
+  font-weight: 500;
+  margin-top: 15px;
+}
+
+.login-card input {
+  width: 100%;
+  background-color: #f7f7f7;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  margin-top: 6px;
+  box-sizing: border-box;
+}
+
+.password-container {
+  position: relative;
+}
+
+.password-container input {
+  padding-right: 80px !important;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #41a85f;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 3;
+}
+
+.login-card .btn {
+  width: 100%;
+  background-color: #41a85f;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+.login-card .btn:hover {
+  background-color: #369c54;
+}
+
+.bottom-text {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.bottom-text a {
+  color: #41a85f;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.logo {
+  width: 60px;
+  height: auto;
+}

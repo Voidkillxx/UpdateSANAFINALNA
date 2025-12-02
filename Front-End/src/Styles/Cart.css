@@ -1,0 +1,20 @@
+.cart-container {
+    background-color: #fff;
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.cart-section-title {
+    color: #4CAF50;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 2.5rem;
+    text-align: left;
+}
+
+.order-summary-card {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
