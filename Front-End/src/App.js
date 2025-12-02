@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Alert, Container, Spinner, Modal } from 'react-bootstrap'; 
+import { Container, Spinner, Modal } from 'react-bootstrap'; 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
@@ -9,6 +9,7 @@ import { CartProvider, CartContext } from './context/CartContext';
 // Components & Pages
 import AppNavbar from './components/Navbar'; 
 import AddQuantityModal from './components/AddQuantityModal';
+import NotificationModal from './components/NotificationModal'; //
 import HomePage from './pages/HomePage';
 import ProductList from './pages/ProductList';
 import ProductDetails from './pages/ProductDetails';
@@ -23,11 +24,10 @@ import AddProduct from './pages/AddProduct';
 import Register from './pages/Register';
 import ProfilePage from './pages/ProfilePage';
 import OrderHistory from './pages/OrderHistory'; 
-// --- NEW IMPORTS ---
 import ManageOrders from './pages/ManageOrders';
 import ManageUsers from './pages/ManageUsers';
 
-let alertTimeoutId = null;
+// Removed 'alertTimeoutId' as NotificationModal handles timing internally
 
 // --- INTERNAL COMPONENTS: Confirmation Dialog ---
 const ConfirmationDialog = ({ show, onHide, onConfirm, title, message }) => {
@@ -166,22 +166,44 @@ function AppContent() {
     const [showCart, setShowCart] = useState(false);
     const [showCheckout, setShowCheckout] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [alertInfo, setAlertInfo] = useState({ show: false, message: '', variant: 'success' });
+    
+    // --- UPDATED: Notification Modal State (Not Alert Info) ---
+    const [notification, setNotification] = useState({ show: false, message: '', variant: 'success' });
+
     const navigate = useNavigate();
     const location = useLocation();
     const isLoginPage = ['/login', '/forgot', '/reset', '/register'].includes(location.pathname);
 
-    // --- RE-ADDED: Removal Modal States ---
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false); 
     const [itemToRemoveId, setItemToRemoveId] = useState(null);
 
+    // --- Reset Filters when navigating to Home ('/') ---
+
+    // --- NEW: Redirect Admin to Dashboard on Load ---
     useEffect(() => {
+        // If user is logged in, is an admin, and is currently on the generic homepage
+        if (currentUser?.is_admin && location.pathname === '/') {
+            navigate('/admin');
+        }
+    }, [currentUser, location.pathname, navigate]);
+    
+    useEffect(() => {
+        if (location.pathname === '/') {
+            setSelectedCategory(null);
+            setSearchTerm('');
+            setCurrentPage(1);
+        }
+    }, [location.pathname]);
+
+    useEffect(() => {
+        let active = true; 
+
         const fetchData = async () => {
             setLoadingData(true);
             try {
                 const catRes = await fetch('http://localhost:8095/api/categories');
                 const catData = await catRes.json();
-                setCategories(catData);
+                if(active) setCategories(catData);
 
                 let url = `http://localhost:8095/api/products?page=${currentPage}`;
                 
@@ -195,21 +217,24 @@ function AppContent() {
                 const prodRes = await fetch(url);
                 const prodData = await prodRes.json();
 
-                if (prodData.data) {
-                    setProducts(prodData.data);
-                    setLastPage(prodData.last_page);
-                } else {
-                    setProducts(prodData);
-                    setLastPage(1);
+                if (active) {
+                    if (prodData.data) {
+                        setProducts(prodData.data);
+                        setLastPage(prodData.last_page);
+                    } else {
+                        setProducts(prodData);
+                        setLastPage(1);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
-                setLoadingData(false);
+                if(active) setLoadingData(false);
             }
         };
 
         fetchData();
+        return () => { active = false; };
     }, [currentPage, searchTerm, selectedCategory]);
 
     useEffect(() => {
@@ -217,7 +242,6 @@ function AppContent() {
             setUser(currentUser.id);
             fetchCart(localStorage.getItem('token'));
         }
-        return () => { if (alertTimeoutId) clearTimeout(alertTimeoutId); };
     }, [currentUser, setUser]); 
 
     const fetchCart = async (token) => {
@@ -239,12 +263,17 @@ function AppContent() {
         } catch(e) { console.error(e); }
     };
 
-    const showAlert = (message, variant = 'success', duration = 3000) => {
-        if (alertTimeoutId) clearTimeout(alertTimeoutId);
-        setAlertInfo({ show: true, message, variant });
-        alertTimeoutId = setTimeout(() => {
-            setAlertInfo({ show: false, message: '', variant: 'success' });
-        }, duration);
+    // --- HELPER: Trigger Notification Modal ---
+    const showNotification = (message, variant = 'success') => {
+        setNotification({ show: true, message, variant });
+    };
+    // Alias strictly for compatibility if child components use this prop name
+    const showAlert = showNotification; 
+
+    const handleResetFilters = () => {
+        setSelectedCategory(null);
+        setSearchTerm('');
+        setCurrentPage(1);
     };
 
     const handleLogin = (token, user) => {
@@ -253,6 +282,8 @@ function AppContent() {
         setCurrentUser(user);
         if (typeof setUser === 'function') setUser(user.id);
         
+        handleResetFilters(); // Reset filters on login
+
         fetchCart(token);
         refreshCart(); 
 
@@ -269,14 +300,10 @@ function AppContent() {
         if (typeof setUser === 'function') setUser(null);
         if (typeof refreshCart === 'function') refreshCart(); 
         
-        showAlert('You have been logged out.', 'info');
-        navigate('/');
-    };
+        handleResetFilters(); // Reset filters on logout
 
-    const handleResetFilters = () => {
-        setSelectedCategory(null);
-        setSearchTerm('');
-        setCurrentPage(1);
+        showAlert('You have been logged out.', 'success');
+        navigate('/');
     };
 
     const handleOpenCart = () => {
@@ -369,8 +396,6 @@ function AppContent() {
         setLoading(false);
     };
 
-    // Handler to open the confirmation modal instead of window.confirm
-    // eslint-disable-next-line no-unused-vars
     const handleRemoveClick = (itemId) => {
         setItemToRemoveId(itemId);
         setShowRemoveConfirm(true);
@@ -405,22 +430,30 @@ function AppContent() {
             });
             const data = await res.json();
             if(res.ok) {
-                alert(`Order Successful! Order ID: ${data.order_id}`);
+                // Use Modal notification here
+                showAlert(`Order Successful! Order ID: ${data.order_id}`, 'success');
                 setShowCheckout(false);
                 setShowCart(false);
                 fetchCart(token);
                 refreshCart();
             } else {
-                alert(data.message || 'Checkout failed');
+                showAlert(data.message || 'Checkout failed', 'danger');
             }
-        } catch(e) { alert('Error processing checkout'); }
+        } catch(e) { showAlert('Error processing checkout', 'danger'); }
         setLoading(false);
     };
 
     return (
         <div className="App">
             {loading && <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex justify-content-center align-items-center" style={{zIndex: 10000}}><Spinner animation="border" variant="light" /></div>}
-            {alertInfo.show && <Alert variant={alertInfo.variant} onClose={() => setAlertInfo({ ...alertInfo, show: false })} dismissible className="app-alert position-fixed top-0 start-50 translate-middle-x mt-3 shadow" style={{ zIndex: 9999, width: 'auto', top: '70px' }}>{alertInfo.message}</Alert>}
+            
+            {/* --- REPLACED ALERT WITH NOTIFICATION MODAL --- */}
+            <NotificationModal 
+                show={notification.show} 
+                message={notification.message} 
+                variant={notification.variant} 
+                onClose={() => setNotification({ ...notification, show: false })} 
+            />
 
             {!isLoginPage && <AppNavbar currentUser={currentUser} handleLogout={handleLogout} searchTerm={searchTerm} setSearchTerm={setSearchTerm} handleResetFilters={handleResetFilters} showAlert={showAlert} cartCount={cartCount} onOpenCart={handleOpenCart} />}
 
@@ -432,16 +465,16 @@ function AppContent() {
                     <Route path="/cart" element={<Cart showAlert={showAlert} />} />
                     <Route path="/checkout" element={<Checkout showAlert={showAlert} handleResetFilters={handleResetFilters} />} />
                     <Route path="/login" element={<LoginPage handleLogin={handleLogin} />} />
-                    <Route path="/register" element={<Register onLogin={handleLogin} />} /> 
-                    <Route path="/forgot" element={<ForgotPassword />} />
+                    <Route path="/register" element={<Register onLogin={handleLogin} showAlert={showAlert} />} /> 
+                    <Route path="/forgot" element={<ForgotPassword showAlert={showAlert} />} />
                     <Route path="/reset" element={<ResetPassword />} />
                     <Route path="/profile" element={<ProfilePage showAlert={showAlert} />} />
                     <Route path="/orders" element={<OrderHistory showAlert={showAlert} />} />
 
                     {/* --- ADMIN ROUTES --- */}
-                    <Route path="/admin" element={<AdminDashboard token={localStorage.getItem('token')} />} />
-                    <Route path="/admin/edit/:productId" element={<EditProduct />} />
-                    <Route path="/admin/add" element={<AddProduct />} />
+                    <Route path="/admin" element={<AdminDashboard token={localStorage.getItem('token')} showNotification={showAlert} />} />
+                    <Route path="/admin/edit/:productId" element={<EditProduct showNotification={showAlert} />} />
+                    <Route path="/admin/add" element={<AddProduct showNotification={showAlert} />} />
                     
                     {/* NEW ADMIN PAGES */}
                     <Route path="/admin/orders" element={<ManageOrders showAlert={showAlert} />} />

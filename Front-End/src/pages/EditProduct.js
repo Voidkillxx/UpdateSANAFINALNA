@@ -13,7 +13,7 @@ const LoadingModal = () => (
   </div>
 );
 
-const EditProduct = () => {
+const EditProduct = ({ showNotification }) => {
     // 'productId' in URL might now be a SLUG (e.g. "fresh-milk")
     const { productId } = useParams(); 
     const navigate = useNavigate();
@@ -50,14 +50,14 @@ const EditProduct = () => {
                     discount: product.discount || 0,
                 });
             } catch (error) {
-                alert("Failed to load product.");
+                if(showNotification) showNotification("Failed to load product.", "error");
                 navigate("/admin");
             } finally {
                 setLoadingData(false);
             }
         };
         loadData();
-    }, [productId, navigate]);
+    }, [productId, navigate, showNotification]);
 
     const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); };
 
@@ -78,10 +78,10 @@ const EditProduct = () => {
         try {
             // Use realId (numeric) for the PUT request
             await updateProduct(realId, payload);
-            alert("Product Updated Successfully!");
+            if(showNotification) showNotification("Product Updated Successfully!", "success");
             navigate("/admin");
         } catch (error) {
-            alert(error.message || "Failed to update product");
+            if(showNotification) showNotification(error.message || "Failed to update product", "error");
         } finally {
             setProcessing(false);
         }

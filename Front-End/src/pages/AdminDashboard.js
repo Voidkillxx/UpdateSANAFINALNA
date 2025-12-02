@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Spinner, Modal, Alert, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Spinner, Modal, Pagination } from 'react-bootstrap';
 import { useNavigate } from "react-router-dom";
-import { calculateSellingPrice } from '../utils/PricingUtils';
 import { fetchProducts, fetchCategories, deleteProduct, updateProduct } from "../utils/api";
-import "../Styles/OrderHistory.css"; // Reuse the shared Green Theme
+import "../Styles/OrderHistory.css"; 
 
-function AdminDashboard({ token }) {
+function AdminDashboard({ token, showNotification }) {
     const navigate = useNavigate();
 
     // --- STATE ---
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [successMsg, setSuccessMsg] = useState('');
-
+    
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategory, setFilterCategory] = useState("");
     
@@ -59,7 +56,7 @@ function AdminDashboard({ token }) {
             setCategories(catRes);
         } catch (error) {
             console.error("Failed to load data", error);
-            setError("Failed to load dashboard data.");
+            if (showNotification) showNotification("Failed to load dashboard data.", "error");
         } finally {
             setLoading(false);
         }
@@ -88,15 +85,14 @@ function AdminDashboard({ token }) {
         setIsDeleting(true);
         try {
             await deleteProduct(productToDelete.id);
-            setSuccessMsg(`Product "${productToDelete.product_name}" deleted successfully.`);
+            if (showNotification) showNotification(`Product "${productToDelete.product_name}" deleted successfully.`, "success");
             setShowDeleteModal(false);
             setProductToDelete(null);
             loadData(); 
         } catch (err) {
-            setError("Failed to delete product.");
+            if (showNotification) showNotification("Failed to delete product.", "error");
         } finally {
             setIsDeleting(false);
-            setTimeout(() => setSuccessMsg(''), 3000); 
         }
     };
 
@@ -104,23 +100,23 @@ function AdminDashboard({ token }) {
     const handleToggleVisibility = async (product) => {
         setTogglingId(product.id);
         try {
-            // Toggle the is_visible property (assuming backend supports it, defaulting to true if undefined)
-            const currentVisibility = product.is_visible !== undefined ? product.is_visible : 1; 
-            const newVisibility = currentVisibility ? 0 : 1;
+            // FIX: Use 'is_active' (boolean) instead of 'is_visible'
+            // The backend returns true/false for is_active.
+            const newStatus = !product.is_active;
 
-            await updateProduct(product.id, { is_visible: newVisibility });
+            // Send 'is_active' to backend (ProductController expects this or maps is_visible to it)
+            await updateProduct(product.id, { is_active: newStatus });
             
-            // Optimistic update locally to make UI snappy
+            // Optimistic update
             setProducts(products.map(p => 
-                p.id === product.id ? { ...p, is_visible: newVisibility } : p
+                p.id === product.id ? { ...p, is_active: newStatus } : p
             ));
             
-            setSuccessMsg(`Product ${newVisibility ? 'enabled' : 'disabled'} successfully.`);
+            if (showNotification) showNotification(`Product ${newStatus ? 'enabled' : 'disabled'} successfully.`, "success");
         } catch (error) {
-            setError("Failed to update product status.");
+            if (showNotification) showNotification("Failed to update product status.", "error");
         } finally {
             setTogglingId(null);
-            setTimeout(() => setSuccessMsg(''), 3000);
         }
     };
 
@@ -141,7 +137,7 @@ function AdminDashboard({ token }) {
     return (
         <div className="order-history-container" style={{ maxWidth: '1400px' }}>
             
-            {/* Header Section (Matching Manage Users) */}
+            {/* Header Section */}
             <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <h1 className="mb-0 border-0 p-0">Manage Products</h1>
                 <div className="d-flex gap-2">
@@ -155,10 +151,7 @@ function AdminDashboard({ token }) {
                 </div>
             </div>
 
-            {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
-            {successMsg && <Alert variant="success" onClose={() => setSuccessMsg('')} dismissible>{successMsg}</Alert>}
-
-            {/* KPI Cards (Matching Manage Orders Design) */}
+            {/* KPI Cards */}
             <Row className="mb-4 g-3">
                 <Col md={6}>
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: '#e8f5e9' }}>
@@ -270,16 +263,16 @@ function AdminDashboard({ token }) {
                                         </Badge>
                                     </td>
                                     <td className="py-3">
-                                        {/* Status / Visibility Toggle */}
+                                        {/* Status / Visibility Toggle - UPDATED to use is_active */}
                                         <Button 
-                                            variant={p.is_visible === 0 ? "outline-secondary" : "outline-success"}
+                                            variant={!p.is_active ? "outline-secondary" : "outline-success"}
                                             size="sm"
                                             className="rounded-pill py-0 px-2"
                                             onClick={() => handleToggleVisibility(p)}
                                             disabled={togglingId === p.id}
                                             style={{ fontSize: '0.75rem', minWidth: '80px' }}
                                         >
-                                            {togglingId === p.id ? <Spinner size="sm" /> : (p.is_visible === 0 ? 'Disabled' : 'Active')}
+                                            {togglingId === p.id ? <Spinner size="sm" /> : (!p.is_active ? 'Disabled' : 'Active')}
                                         </Button>
                                     </td>
                                     <td className="py-3">
@@ -287,7 +280,7 @@ function AdminDashboard({ token }) {
                                             <Button 
                                                 variant="link" 
                                                 className="text-success p-0 fw-bold text-decoration-none" 
-                                                onClick={() => navigate(`/admin/edit/${p.slug || p.id}`)}
+                                                onClick={() => navigate(`/admin/edit/${p.id}`)}
                                             >
                                                 Edit
                                             </Button>

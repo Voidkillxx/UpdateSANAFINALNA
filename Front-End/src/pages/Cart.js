@@ -25,7 +25,7 @@ const Cart = ({ showAlert }) => {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
 
-  // --- NEW: Local state for "Clearing..." spinner ---
+  // --- Local state for "Clearing..." spinner ---
   const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
@@ -40,21 +40,17 @@ const Cart = ({ showAlert }) => {
   const handleShowClearModal = () => setShowClearModal(true);
   
   const handleCloseClearModal = () => {
-      // Prevent closing if we are in the middle of clearing
       if (!isClearing) {
         setShowClearModal(false);
       }
   };
 
-  // UPDATED: Async handler with Spinner state
   const handleConfirmClear = async () => { 
       try {
-          setIsClearing(true); // 1. Start Spinner
-          
-          await clearCart();   // 2. Wait for DB delete
-          
-          setIsClearing(false); // 3. Stop Spinner
-          setShowClearModal(false); // 4. Close Modal
+          setIsClearing(true); 
+          await clearCart();   
+          setIsClearing(false); 
+          setShowClearModal(false); 
           
           if(showAlert) showAlert('Cart cleared successfully!', 'success');
       } catch (error) {
@@ -65,16 +61,30 @@ const Cart = ({ showAlert }) => {
   
   const handleShowRemoveModal = (item) => { setItemToRemove(item); setShowRemoveModal(true); };
   const handleCloseRemoveModal = () => { setItemToRemove(null); setShowRemoveModal(false); };
+
+  // --- UPDATED: Get Product Name & Trigger Notification ---
   const handleConfirmRemove = async (itemId) => { 
-      await removeFromCart(itemId); 
+      // 1. Capture the product name BEFORE deleting/closing modal
+      const productName = itemToRemove?.product?.product_name || 'Item';
+
+      // 2. Call Context function to remove item
+      const success = await removeFromCart(itemId); 
+      
+      // 3. Close the confirmation dialog
       handleCloseRemoveModal(); 
+
+      // 4. Show the Auto-Closing Notification Modal
+      if (success) {
+          if (showAlert) showAlert(`${productName} is removed from cart`, 'success');
+      } else {
+          if (showAlert) showAlert('Failed to remove item.', 'danger');
+      }
   };
 
   // --- Checkout Handler ---
   const handleProceedToCheckout = () => {
     if (selectedItems.length === 0) {
        if (showAlert) showAlert('Please select at least one item to checkout.', 'warning');
-       else alert('Please select at least one item to checkout.');
     } else {
       navigate('/checkout');
     }
@@ -162,13 +172,13 @@ const Cart = ({ showAlert }) => {
         )}
       </Container>
 
-      {/* --- UPDATED: Clear Cart Modal with Spinner --- */}
+      {/* Clear Cart Modal */}
       <Modal 
         show={showClearModal} 
         onHide={handleCloseClearModal} 
         centered
-        backdrop={isClearing ? 'static' : true} // Lock background
-        keyboard={!isClearing} // Disable Escape key
+        backdrop={isClearing ? 'static' : true}
+        keyboard={!isClearing}
       >
           <Modal.Header closeButton={!isClearing}> 
             <Modal.Title>Clear Cart?</Modal.Title> 
@@ -180,23 +190,13 @@ const Cart = ({ showAlert }) => {
               <Button variant="secondary" onClick={handleCloseClearModal} disabled={isClearing}>
                 Cancel
               </Button> 
-              
               <Button variant="danger" onClick={handleConfirmClear} disabled={isClearing}>
                 {isClearing ? (
                     <>
-                        <Spinner
-                            as="span"
-                            animation="border"
-                            size="sm"
-                            role="status"
-                            aria-hidden="true"
-                            className="me-2"
-                        />
+                        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                         Clearing...
                     </>
-                ) : (
-                    'Yes, Clear It'
-                )}
+                ) : 'Yes, Clear It'}
               </Button> 
           </Modal.Footer>
       </Modal>

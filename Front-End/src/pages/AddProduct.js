@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../Styles/AddProduct.css";
 import { useNavigate } from "react-router-dom";
 
-const AddProduct = ({ onCancel, onProductAdded }) => {
+const AddProduct = ({ onCancel, onProductAdded, showNotification }) => {
     const navigate = useNavigate();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ const AddProduct = ({ onCancel, onProductAdded }) => {
 
         // Validation
         if (!form.name || !form.price || !form.categoryId) {
-            alert("Please fill in all required fields (Name, Price, and Category)");
+            if(showNotification) showNotification("Please fill in all required fields (Name, Price, and Category)", "error");
             setLoading(false);
             return;
         }
@@ -75,7 +75,7 @@ const AddProduct = ({ onCancel, onProductAdded }) => {
             const data = await response.json();
 
             if (response.ok) {
-                alert("Product Created Successfully!");
+                if(showNotification) showNotification("Product Created Successfully!", "success");
                 
                 // Reset form
                 setForm({
@@ -86,11 +86,11 @@ const AddProduct = ({ onCancel, onProductAdded }) => {
                 if (onProductAdded) onProductAdded(data);
                 handleBack(); // Use handleBack to close or navigate
             } else {
-                alert(data.message || "Failed to create product");
+                if(showNotification) showNotification(data.message || "Failed to create product", "error");
             }
         } catch (error) {
             console.error("Error creating product:", error);
-            alert("Server error");
+            if(showNotification) showNotification("Server error", "error");
         } finally {
             setLoading(false);
         }

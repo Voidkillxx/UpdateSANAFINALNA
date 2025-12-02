@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spinner, Button, Row, Col, Card, Badge, Pagination, Modal } from 'react-bootstrap'; 
+import { useNavigate } from 'react-router-dom'; 
 import { fetchUsers, updateUserRole, deleteUser } from '../utils/api';
 import '../Styles/OrderHistory.css'; 
 
@@ -23,6 +24,7 @@ const ConfirmModal = ({ show, handleClose, handleConfirm, title, message, varian
 );
 
 const ManageUsers = ({ showAlert }) => { 
+    const navigate = useNavigate(); 
     const [users, setUsers] = useState([]); 
     const [filteredUsers, setFilteredUsers] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +33,7 @@ const ManageUsers = ({ showAlert }) => {
     // --- MODAL STATE ---
     const [modalConfig, setModalConfig] = useState({
         show: false,
-        type: null, // 'role_change' or 'delete'
+        type: null, 
         user: null,
         title: '',
         message: '',
@@ -113,21 +115,45 @@ const ManageUsers = ({ showAlert }) => {
     const handleConfirmAction = async () => {
         setIsProcessing(true);
         const { type, user } = modalConfig;
+        
+        // Get currently logged in user from storage
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
         try {
             if (type === 'role_change') {
                 await updateUserRole(user.id, !user.is_admin);
+
+                // --- ROBUST SELF-DEMOTION CHECK ---
+                // Convert both IDs to strings to avoid "1" !== 1 issues
+                const isSelf = String(user.id) === String(currentUser.id);
+                
+                // If we are modifying ourselves AND we currently have admin rights (meaning we are revoking them)
+                if (isSelf && user.is_admin) {
+                     showAlert('You have revoked your own Admin rights. Redirecting...', 'warning');
+                     setModalConfig({ ...modalConfig, show: false });
+                     setIsProcessing(false);
+                     navigate('/'); // Redirect to Home
+                     return; // CRITICAL: Stop here so getUsers() is NOT called
+                }
+
                 showAlert(`User role updated successfully!`, 'success');
             } else if (type === 'delete') {
+                if (String(user.id) === String(currentUser.id)) {
+                    showAlert('You cannot delete your own account here.', 'warning');
+                    setIsProcessing(false);
+                    return;
+                }
                 await deleteUser(user.id);
                 showAlert('User deleted successfully.', 'success');
             }
-            getUsers(); // Refresh list
+            
+            // Only refresh the list if we didn't redirect
+            getUsers(); 
         } catch (e) {
             showAlert('Action failed. Please try again.', 'danger');
         } finally {
-            setIsProcessing(false);
-            setModalConfig({ ...modalConfig, show: false });
+            if (setIsProcessing) setIsProcessing(false);
+            setModalConfig(prev => ({ ...prev, show: false }));
         }
     };
 

@@ -16,46 +16,32 @@ const LoadingModal = () => (
   </div>
 );
 
-function Register({ onLogin }) {
+// Added showNotification prop
+function Register({ onLogin, showNotification }) {
   const [view, setView] = useState('register');
-  const [loading, setLoading] = useState(false); // Added missing state
-  const navigate = useNavigate(); // Added missing hook
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    username: "",
-    email: "",
-    phone_number: "",
-    zipcode: "",
-    address: "",
-    password: "",
-    password_confirmation: ""
+    first_name: "", last_name: "", username: "", email: "", phone_number: "", zipcode: "", address: "", password: "", password_confirmation: ""
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // eslint-disable-next-line no-unused-vars
-  const [dialogOpen, setDialogOpen] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [dialogMsg, setDialogMsg] = useState("");
-
-  const openDialog = (msg) => {
-    setDialogMsg(msg);
-    setDialogOpen(true);
-    // You might want to actually show a modal/alert here using these states
-    alert(msg); 
-  };
-
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    // --- REPLACED ALERT WITH NOTIFICATION MODAL ---
+    if (formData.password.length < 8) {
+      showNotification("The password field must be at least 8 characters.", "error");
+      return;
+    }
+
     if (formData.password !== formData.password_confirmation) {
-      openDialog("Passwords do not match.");
+      showNotification("Passwords do not match.", "error");
       return;
     }
 
@@ -64,12 +50,14 @@ function Register({ onLogin }) {
       await registerUser(formData);
       setView('otp');
     } catch (err) {
-      openDialog(err.message || "Registration failed.");
+      // --- REPLACED ALERT WITH NOTIFICATION MODAL ---
+      showNotification(err.message || "Registration failed.", "error");
     } finally {
       setLoading(false);
     }
   };
 
+  // ... (Keep render logic same, just updating calls) ...
   if (view === 'otp') {
       return (
           <OtpPage 
@@ -88,20 +76,18 @@ function Register({ onLogin }) {
   return (
     <div className="register-container">
       {loading && <LoadingModal />}
-      
       <div className="register-card">
-        <button className="back-btn" onClick={() => navigate("/login")}>
-          ← Back to Login
-        </button>
-
-        <div className="logo-container" style={{textAlign: 'center', marginBottom: '1rem'}}>
+         {/* ... (Existing JSX) ... */}
+         <button className="back-btn" onClick={() => navigate("/login")}>← Back to Login</button>
+         <div className="logo-container" style={{textAlign: 'center', marginBottom: '1rem'}}>
            <img src={logo} alt="Jake Store Logo" className="logo" style={{width: '80px'}}/>
         </div>
         <h2 className="store-name">JAKE STORE</h2>
         <p className="subtitle">Create Account</p>
 
         <form onSubmit={handleRegister}>
-          <Row className="g-3">
+            {/* ... (Inputs) ... */}
+            <Row className="g-3">
             <Col md={6}>
                 <label className="form-label">First Name</label>
                 <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} required disabled={loading} placeholder="e.g. John" />
@@ -110,7 +96,6 @@ function Register({ onLogin }) {
                 <label className="form-label">Last Name</label>
                 <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} required disabled={loading} placeholder="e.g. Doe" />
             </Col>
-            
             <Col md={6}>
                 <label className="form-label">Username</label>
                 <input type="text" name="username" value={formData.username} onChange={handleChange} required disabled={loading} placeholder="Choose a username" />
@@ -119,7 +104,6 @@ function Register({ onLogin }) {
                 <label className="form-label">Email Address</label>
                 <input type="email" name="email" value={formData.email} onChange={handleChange} required disabled={loading} placeholder="name@example.com" />
             </Col>
-            
             <Col md={6}>
                 <label className="form-label">Phone Number</label>
                 <input type="text" name="phone_number" value={formData.phone_number} onChange={handleChange} required disabled={loading} placeholder="+1 234 567 8900" />
@@ -128,54 +112,27 @@ function Register({ onLogin }) {
                 <label className="form-label">Zipcode</label>
                 <input type="text" name="zipcode" value={formData.zipcode} onChange={handleChange} required disabled={loading} placeholder="12345" />
             </Col>
-            
             <Col xs={12}>
                 <label className="form-label">Address</label>
                 <input type="text" name="address" value={formData.address} onChange={handleChange} required disabled={loading} placeholder="Street, City, State" />
             </Col>
-            
-            {/* Password Fields */}
             <Col md={6}>
                 <label className="form-label">Password</label>
                 <div className="password-wrapper">
-                    <input 
-                        type={showPassword ? "text" : "password"} 
-                        name="password" 
-                        value={formData.password} 
-                        onChange={handleChange} 
-                        required 
-                        disabled={loading} 
-                        placeholder="••••••••"
-                    />
-                    <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? "Hide" : "Show"}
-                    </button>
+                    <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required disabled={loading} placeholder="••••••••"/>
+                    <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Hide" : "Show"}</button>
                 </div>
             </Col>
             <Col md={6}>
                 <label className="form-label">Confirm Password</label>
                 <div className="password-wrapper">
-                    <input 
-                        type={showConfirm ? "text" : "password"} 
-                        name="password_confirmation" 
-                        value={formData.password_confirmation} 
-                        onChange={handleChange} 
-                        required 
-                        disabled={loading}
-                        placeholder="••••••••" 
-                    />
-                    <button type="button" className="toggle-password" onClick={() => setShowConfirm(!showConfirm)}>
-                        {showConfirm ? "Hide" : "Show"}
-                    </button>
+                    <input type={showConfirm ? "text" : "password"} name="password_confirmation" value={formData.password_confirmation} onChange={handleChange} required disabled={loading} placeholder="••••••••" />
+                    <button type="button" className="toggle-password" onClick={() => setShowConfirm(!showConfirm)}>{showConfirm ? "Hide" : "Show"}</button>
                 </div>
             </Col>
           </Row>
-
-          <button type="submit" className="register-btn" disabled={loading}>
-            {loading ? "Processing..." : "Create Account"}
-          </button>
+          <button type="submit" className="register-btn" disabled={loading}>{loading ? "Processing..." : "Create Account"}</button>
         </form>
-
       </div>
     </div>
   );

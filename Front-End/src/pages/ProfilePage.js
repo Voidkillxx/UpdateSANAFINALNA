@@ -13,9 +13,7 @@ const ProfilePage = ({ showAlert }) => {
     });
 
     // Loading States
-    // 'loading' is for form submissions (saving data)
     const [loading, setLoading] = useState(false);
-    // 'fetchingProfile' is specifically for the initial page load
     const [fetchingProfile, setFetchingProfile] = useState(true);
     
     // Security States
@@ -48,7 +46,6 @@ const ProfilePage = ({ showAlert }) => {
             const token = localStorage.getItem('token');
             if (!token) { navigate('/login'); return; }
 
-            // Start the fetching loader
             setFetchingProfile(true);
 
             try {
@@ -65,7 +62,6 @@ const ProfilePage = ({ showAlert }) => {
                 console.error(error);
                 showAlert('Server error while loading profile.', 'danger');
             } finally {
-                // Stop the fetching loader regardless of success or failure
                 setFetchingProfile(false);
             }
         };
@@ -121,6 +117,18 @@ const ProfilePage = ({ showAlert }) => {
             }
         }
 
+        // Validation for Password Change (Length Check)
+        if (actionType === 'password') {
+            if (passwords.new_password.length < 8) {
+                showAlert("Password must be at least 8 characters long.", "warning");
+                return;
+            }
+            if (passwords.new_password !== passwords.new_password_confirmation) {
+                showAlert("New passwords do not match!", "warning");
+                return;
+            }
+        }
+
         if (actionType === 'password') setPasswordOtpLoading(true);
         if (actionType === 'email') setEmailOtpLoading(true);
         
@@ -167,6 +175,12 @@ const ProfilePage = ({ showAlert }) => {
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
+
+        if (passwords.new_password.length < 8) {
+            showAlert("Password must be at least 8 characters long.", "warning");
+            return;
+        }
+
         if(passwords.new_password !== passwords.new_password_confirmation) {
             showAlert("New passwords do not match!", "warning");
             return;
@@ -233,7 +247,6 @@ const ProfilePage = ({ showAlert }) => {
         setLoading(false);
     };
 
-    // --- RENDER LOADING STATE ---
     if (fetchingProfile) {
         return (
             <Container className="profile-container d-flex justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
@@ -247,12 +260,10 @@ const ProfilePage = ({ showAlert }) => {
         );
     }
 
-    // --- RENDER MAIN CONTENT ---
     return (
         <Container className="profile-container">
             <Card className="profile-card">
                 <Card.Header className="profile-header">
-                    {/* Added text-success class to make the title green */}
                     <h3 className="profile-title text-success">My Profile</h3>
                 </Card.Header>
                 <Card.Body>
@@ -265,7 +276,6 @@ const ProfilePage = ({ showAlert }) => {
                             setPasswordOtp(''); 
                             setEmailOtp(''); 
                             setEmailChangePassword('');
-                            // Reset visibility toggles
                             setShowCurrentPass(false);
                             setShowNewPass(false);
                             setShowConfirmPass(false);
@@ -318,11 +328,14 @@ const ProfilePage = ({ showAlert }) => {
                             
                             <div className="security-section">
                                 <h5>Change Password</h5>
-                                <Form onSubmit={handlePasswordChange}>
+                                <Form onSubmit={handlePasswordChange} autoComplete="off">
                                     <Row className="mb-3">
                                         <Col md={4}>
                                             <InputGroup>
                                                 <Form.Control 
+                                                    id="cp_current"
+                                                    name="cp_current_password"
+                                                    autoComplete="current-password"
                                                     type={showCurrentPass ? "text" : "password"} 
                                                     placeholder="Current Password" 
                                                     value={passwords.current_password} 
@@ -337,6 +350,9 @@ const ProfilePage = ({ showAlert }) => {
                                         <Col md={4}>
                                             <InputGroup>
                                                 <Form.Control 
+                                                    id="cp_new"
+                                                    name="cp_new_password"
+                                                    autoComplete="new-password"
                                                     type={showNewPass ? "text" : "password"} 
                                                     placeholder="New Password" 
                                                     value={passwords.new_password} 
@@ -351,6 +367,9 @@ const ProfilePage = ({ showAlert }) => {
                                         <Col md={4}>
                                             <InputGroup>
                                                 <Form.Control 
+                                                    id="cp_confirm"
+                                                    name="cp_confirm_password"
+                                                    autoComplete="new-password"
                                                     type={showConfirmPass ? "text" : "password"} 
                                                     placeholder="Confirm Password" 
                                                     value={passwords.new_password_confirmation} 
@@ -380,16 +399,27 @@ const ProfilePage = ({ showAlert }) => {
                             <div className="security-section">
                                 <h5>Change Email Address</h5>
                                 <p className="text-muted small">Current: {user.email}</p>
-                                <Form onSubmit={handleEmailChange}>
+                                <Form onSubmit={handleEmailChange} autoComplete="off">
                                     <Form.Group className="mb-3 input-email-change">
-                                        <Form.Control type="email" placeholder="Enter new email address" value={newEmail} onChange={e => setNewEmail(e.target.value)} required />
+                                        <Form.Control 
+                                            name="new_email_address"
+                                            autoComplete="email"
+                                            type="email" 
+                                            placeholder="Enter new email address" 
+                                            value={newEmail} 
+                                            onChange={e => setNewEmail(e.target.value)} 
+                                            required 
+                                        />
                                     </Form.Group>
 
-                                    {/* Password Input for Email Change with Show/Hide */}
                                     {!showEmailOtpInput && (
                                         <Form.Group className="mb-3 input-email-change">
                                             <InputGroup>
                                                 <Form.Control 
+                                                    id="ce_password"
+                                                    name="ce_verify_password"
+                                                    // "new-password" prevents browsers from autofilling with the saved site password
+                                                    autoComplete="new-password"
                                                     type={showEmailVerifyPass ? "text" : "password"} 
                                                     placeholder="Enter current password to verify" 
                                                     value={emailChangePassword} 

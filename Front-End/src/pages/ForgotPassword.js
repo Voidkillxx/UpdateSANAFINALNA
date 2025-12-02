@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { forgotPassword } from "../utils/api";
 import "../Styles/ForgotPassword.css";
 
-function ForgotPassword() {
+// Added showNotification prop
+function ForgotPassword({ showNotification }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
@@ -17,17 +18,22 @@ function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) { alert("Please enter your email."); return; }
+    if (!email) { 
+        showNotification("Please enter your email.", "error"); 
+        return; 
+    }
     setLoading(true);
 
     try {
-      const response = await forgotPassword({ email });
-      alert("Email found! OTP sent to your email.");
+      await forgotPassword({ email });
+      // --- REPLACED ALERT WITH NOTIFICATION MODAL ---
+      showNotification("Email found! OTP sent to your email.", "success");
       setResendTimer(60);
       localStorage.setItem("resetEmail", email); 
       navigate("/reset"); 
     } catch (error) {
-      alert(error.message || "Failed to send code.");
+      // --- REPLACED ALERT WITH NOTIFICATION MODAL (covers User not found) ---
+      showNotification(error.message || "User not found", "error");
     } finally {
       setLoading(false);
     }

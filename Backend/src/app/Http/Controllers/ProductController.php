@@ -15,15 +15,12 @@ class ProductController extends Controller
     {
         $query = Product::query();
 
-        
         $user = $request->user('sanctum');
 
-       
         if (!$user || !$user->is_admin) {
             $query->where('is_active', true);
         }
 
-        
         if ($request->filled('category')) {
             $slugs = explode(',', $request->category);
             $query->whereHas('category', function (Builder $q) use ($slugs) {
@@ -54,14 +51,17 @@ class ProductController extends Controller
 
     public function show($slug)
     {
-        $query = Product::with('category');
+        // FIX: Do not reuse a modified builder variable ($query) across fallback checks.
+        // Try finding by slug first
+        $product = Product::with('category')->where('slug', $slug)->first();
         
-        // Find by slug or ID
-        $product = $query->where('slug', $slug)->first() ?? $query->find($slug);
+        // If not found by slug, try finding by ID
+        if (!$product) {
+            $product = Product::with('category')->find($slug);
+        }
 
         if (!$product) return response()->json(['message' => 'Product not found'], 404);
 
-      
         $user = request()->user('sanctum');
         if ((!$user || !$user->is_admin) && !$product->is_active) {
            return response()->json(['message' => 'Product not available'], 404);
@@ -79,7 +79,7 @@ class ProductController extends Controller
             'category_id'  => 'required|exists:categories,id',
             'description'  => 'nullable|string',
             'image_url'    => 'nullable|string',
-            'is_active'    => 'boolean', // Allow setting active state on creation
+            'is_active'    => 'boolean',
             'discount'     => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -97,7 +97,6 @@ class ProductController extends Controller
         $product = Product::find($id);
         if (!$product) return response()->json(['message' => 'Product not found'], 404);
 
-      
         if ($request->has('is_visible')) {
             $request->merge(['is_active' => $request->boolean('is_visible')]);
         }
