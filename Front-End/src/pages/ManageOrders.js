@@ -12,7 +12,8 @@ const formatToPesos = (amount) => {
 };
 
 const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
-const TERMINAL_STATES = ['Completed','Delivered' ,'Cancelled'];
+// 'Delivered' is locked here.
+const TERMINAL_STATES = ['Completed', 'Cancelled', 'Returned', 'Delivered'];
 
 const ManageOrders = ({ showAlert }) => { 
     const [allOrders, setAllOrders] = useState([]); 
@@ -280,41 +281,35 @@ const ManageOrders = ({ showAlert }) => {
                 </Col>
             </Row>
             
-            <div className="order-search-container mb-4">
-                <input 
-                    type="text" 
-                    className="order-search-input" 
-                    placeholder="Search by ID, Customer, or Product..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-
-            <div className="d-flex flex-wrap gap-2 mb-4">
-                {filterOptions.map((status) => {
-                    const count = allOrders.filter(o => status === 'All' ? true : o.status === status).length;
-                    const isActive = activeFilter === status;
-                    
-                    return (
-                        <Button 
-                            key={status}
-                            variant={isActive ? 'success' : 'outline-success'}
-                            size="sm"
-                            className={`rounded-pill px-3 fw-bold ${isActive ? 'shadow-sm' : ''}`}
-                            onClick={() => setActiveFilter(status)}
-                            style={{ transition: 'all 0.2s' }}
-                        >
-                            {status} 
-                            <Badge 
-                                bg={isActive ? 'white' : 'success'} 
-                                text={isActive ? 'success' : 'white'} 
-                                className="ms-2 rounded-circle"
-                            >
-                                {count}
-                            </Badge>
-                        </Button>
-                    );
-                })}
+            <div className="d-flex flex-column flex-md-row gap-3 mb-4">
+                <div className="order-search-container flex-grow-1">
+                    <input 
+                        type="text" 
+                        className="order-search-input w-100" 
+                        placeholder="Search by ID, Customer, or Product..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                
+                <div className="d-flex align-items-center gap-2">
+                    <span className="fw-bold text-muted text-nowrap">Filter By:</span>
+                    <Form.Select 
+                        value={activeFilter}
+                        onChange={(e) => setActiveFilter(e.target.value)}
+                        className="shadow-sm border-success text-success fw-bold"
+                        style={{ minWidth: '200px', borderRadius: '20px' }}
+                    >
+                        {filterOptions.map((status) => {
+                            const count = allOrders.filter(o => status === 'All' ? true : o.status === status).length;
+                            return (
+                                <option key={status} value={status}>
+                                    {status} ({count})
+                                </option>
+                            );
+                        })}
+                    </Form.Select>
+                </div>
             </div>
 
             {filteredOrders.length === 0 ? (
