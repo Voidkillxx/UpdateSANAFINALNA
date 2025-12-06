@@ -5,7 +5,7 @@ import { Spinner, Row, Col } from "react-bootstrap";
 import OtpPage from "./OtpPage";
 import "../Styles/Register.css";
  
-const logo = "https://placehold.co/100x100/41a85f/ffffff?text=JS"; 
+const logo = "/img/logo.png"; 
 
 const LoadingModal = () => (
   <div className="loading-overlay">

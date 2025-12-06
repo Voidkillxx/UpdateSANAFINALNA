@@ -11,7 +11,6 @@ const formatToPesos = (amount) => {
     }).format(amount);
 };
 
-// ADDED 'Return Requested' so Admin can filter/select it
 const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested'];
 const TERMINAL_STATES = ['Delivered', 'Cancelled'];
 
@@ -20,16 +19,13 @@ const ManageOrders = ({ showAlert }) => {
     const [filteredOrders, setFilteredOrders] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
     
-    // --- FILTERS ---
     const [activeFilter, setActiveFilter] = useState('All'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
-    // --- PAGINATION STATE ---
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); 
 
-    // --- KPI STATS ---
     const [stats, setStats] = useState({ totalRevenue: 0, pendingCount: 0, returnRequestCount: 0 });
 
     const getOrders = useCallback(async () => {
@@ -54,9 +50,13 @@ const ManageOrders = ({ showAlert }) => {
 
         } catch (err) {
             console.error(err);
-            showAlert('Failed to fetch orders.', 'danger');
+            if (localStorage.getItem('token')) {
+                showAlert('Failed to fetch orders.', 'danger');
+            }
         } finally {
-            setIsLoading(false);
+            if (localStorage.getItem('token')) {
+                setIsLoading(false);
+            }
         }
     }, [showAlert]);
 
@@ -64,7 +64,6 @@ const ManageOrders = ({ showAlert }) => {
         getOrders();
     }, [getOrders]);
 
-    // --- FILTER LOGIC ---
     useEffect(() => {
         let result = allOrders;
 
@@ -88,25 +87,37 @@ const ManageOrders = ({ showAlert }) => {
 
     const handleStatusChange = async (orderId, newStatus) => {
         setUpdatingOrderId(orderId);
+        
+        const currentOrder = allOrders.find(o => o.id === orderId);
+        const isReturnRequest = currentOrder?.status === 'Return Requested';
+
         try {
-            await updateOrderStatus(orderId, newStatus);
-            // Different messages based on action
+            const updatedOrder = await updateOrderStatus(orderId, newStatus);
+            
             if (newStatus === 'Cancelled') {
                 showAlert(`Order #${orderId} cancellation APPROVED.`, 'success');
-            } else if (newStatus === 'Shipped') {
-                showAlert(`Order #${orderId} cancellation REJECTED. Status reverted to Shipped.`, 'info');
-            } else {
-                showAlert(`Order #${orderId} updated to ${newStatus}`, 'success');
+            } 
+            else if (isReturnRequest && newStatus === 'Shipped') {
+                const revertedStatus = updatedOrder?.status || 'Previous Status';
+                showAlert(`Order #${orderId} cancellation REJECTED. Status reverted to ${revertedStatus}.`, 'info');
+            } 
+            else {
+                const finalStatus = updatedOrder?.status || newStatus;
+                showAlert(`Order #${orderId} updated to ${finalStatus}`, 'success');
             }
+            
             getOrders(); 
         } catch (error) {
-            showAlert('Failed to update status', 'danger');
+            if (localStorage.getItem('token')) {
+                showAlert('Failed to update status', 'danger');
+            }
         } finally {
-            setUpdatingOrderId(null);
+            if (localStorage.getItem('token')) {
+                setUpdatingOrderId(null);
+            }
         }
     };
 
-    // --- PAGINATION LOGIC ---
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
@@ -140,7 +151,6 @@ const ManageOrders = ({ showAlert }) => {
                 <h1 className="mb-0 border-0 p-0">Manage Orders</h1>
             </div>
 
-            {/* --- KPI CARDS --- */}
             <Row className="mb-4 g-3">
                 <Col md={4}>
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: '#e8f5e9' }}>
@@ -152,7 +162,6 @@ const ManageOrders = ({ showAlert }) => {
                     </Card>
                 </Col>
                 <Col md={4}>
-                    {/* Highlight Cancellation Requests */}
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: stats.returnRequestCount > 0 ? '#ffebee' : '#fff3cd' }}>
                         <Card.Body className="text-center">
                             <h6 className={stats.returnRequestCount > 0 ? "text-danger text-uppercase fw-bold mb-1" : "text-warning text-uppercase fw-bold mb-1"}>
@@ -258,11 +267,9 @@ const ManageOrders = ({ showAlert }) => {
                                             </div>
                                         </div>
 
-                                        {/* --- ACTION FOOTER --- */}
                                         <div className="order-card-footer mt-auto d-flex justify-content-between align-items-center bg-white border-top p-3">
                                             
                                             {isRequest ? (
-                                                // --- PRODUCTION STANDARD: APPROVE/REJECT BUTTONS ---
                                                 <div className="w-100 d-flex justify-content-between align-items-center">
                                                     <span className="small text-danger fw-bold">Request Pending:</span>
                                                     <div className="d-flex gap-2">
@@ -273,7 +280,7 @@ const ManageOrders = ({ showAlert }) => {
                                                             onClick={() => handleStatusChange(order.id, 'Shipped')}
                                                             disabled={updatingOrderId === order.id}
                                                         >
-                                                            Reject (Ship)
+                                                            Reject Return
                                                         </Button>
                                                         <Button 
                                                             variant="danger" 
@@ -287,7 +294,6 @@ const ManageOrders = ({ showAlert }) => {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                // --- STANDARD DROPDOWN FOR NORMAL ORDERS ---
                                                 <>
                                                     <span className="small text-muted fw-bold">Update Status:</span>
                                                     <div className="d-flex align-items-center gap-2">

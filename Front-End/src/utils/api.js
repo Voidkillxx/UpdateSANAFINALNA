@@ -1,10 +1,6 @@
-// Base URL for your Laravel API
 const BASE_URL = 'http://localhost:8095/api';
 
-/**
- * Generic Fetch Wrapper
- * Handles Headers (JSON + Authorization) and Errors
- */
+
 export const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const token = localStorage.getItem('token');
   

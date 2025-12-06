@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserRole, deleteUser } from '../utils/api';
 import '../Styles/OrderHistory.css'; 
 
-// --- Confirmation Modal Component ---
 const ConfirmModal = ({ show, handleClose, handleConfirm, title, message, variant, isLoading, actionText }) => (
     <Modal show={show} onHide={handleClose} centered backdrop="static">
         <Modal.Header closeButton={!isLoading} className={`bg-${variant} text-white`}>
@@ -30,7 +29,6 @@ const ManageUsers = ({ showAlert }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // --- MODAL STATE ---
     const [modalConfig, setModalConfig] = useState({
         show: false,
         type: null, 
@@ -42,11 +40,9 @@ const ManageUsers = ({ showAlert }) => {
     });
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // --- PAGINATION STATE ---
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(21); 
 
-    // Stats
     const [counts, setCounts] = useState({ total: 0, admins: 0 });
 
     const getUsers = useCallback(async () => {
@@ -61,9 +57,13 @@ const ManageUsers = ({ showAlert }) => {
             });
         } catch (err) {
             console.error(err);
-            showAlert('Failed to load users', 'danger');
+            if (localStorage.getItem('token')) {
+                showAlert('Failed to load users', 'danger');
+            }
         } finally {
-            setIsLoading(false);
+            if (localStorage.getItem('token')) {
+                setIsLoading(false);
+            }
         }
     }, [showAlert]);
 
@@ -84,8 +84,6 @@ const ManageUsers = ({ showAlert }) => {
         }
         setCurrentPage(1); 
     }, [searchTerm, users]);
-
-    // --- HANDLERS ---
 
     const openRoleModal = (user) => {
         const isPromoting = !user.is_admin;
@@ -116,24 +114,20 @@ const ManageUsers = ({ showAlert }) => {
         setIsProcessing(true);
         const { type, user } = modalConfig;
         
-        // Get currently logged in user from storage
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
         try {
             if (type === 'role_change') {
                 await updateUserRole(user.id, !user.is_admin);
 
-                // --- ROBUST SELF-DEMOTION CHECK ---
-                // Convert both IDs to strings to avoid "1" !== 1 issues
                 const isSelf = String(user.id) === String(currentUser.id);
                 
-                // If we are modifying ourselves AND we currently have admin rights (meaning we are revoking them)
                 if (isSelf && user.is_admin) {
-                     showAlert('You have revoked your own Admin rights. Redirecting...', 'warning');
-                     setModalConfig({ ...modalConfig, show: false });
-                     setIsProcessing(false);
-                     navigate('/'); // Redirect to Home
-                     return; // CRITICAL: Stop here so getUsers() is NOT called
+                      showAlert('You have revoked your own Admin rights. Redirecting...', 'warning');
+                      setModalConfig({ ...modalConfig, show: false });
+                      setIsProcessing(false);
+                      navigate('/'); 
+                      return; 
                 }
 
                 showAlert(`User role updated successfully!`, 'success');
@@ -147,13 +141,16 @@ const ManageUsers = ({ showAlert }) => {
                 showAlert('User deleted successfully.', 'success');
             }
             
-            // Only refresh the list if we didn't redirect
             getUsers(); 
         } catch (e) {
-            showAlert('Action failed. Please try again.', 'danger');
+            if (localStorage.getItem('token')) {
+                showAlert('Action failed. Please try again.', 'danger');
+            }
         } finally {
-            if (setIsProcessing) setIsProcessing(false);
-            setModalConfig(prev => ({ ...prev, show: false }));
+            if (localStorage.getItem('token')) {
+                if (setIsProcessing) setIsProcessing(false);
+                setModalConfig(prev => ({ ...prev, show: false }));
+            }
         }
     };
 
@@ -161,7 +158,6 @@ const ManageUsers = ({ showAlert }) => {
         if (!isProcessing) setModalConfig({ ...modalConfig, show: false });
     };
 
-    // --- PAGINATION LOGIC ---
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
@@ -186,7 +182,6 @@ const ManageUsers = ({ showAlert }) => {
                 <h1 className="mb-0 border-0 p-0">Manage Users</h1>
             </div>
 
-            {/* --- STATS ROW --- */}
             <Row className="mb-4 g-3">
                 <Col md={6}>
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: '#e3f2fd' }}>
@@ -292,7 +287,6 @@ const ManageUsers = ({ showAlert }) => {
                         ))}
                     </Row>
 
-                    {/* --- PAGINATION CONTROLS --- */}
                     {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-4">
                             <Pagination>
@@ -319,7 +313,6 @@ const ManageUsers = ({ showAlert }) => {
                 </>
             )}
 
-            {/* --- ACTION CONFIRMATION MODAL --- */}
             <ConfirmModal 
                 show={modalConfig.show} 
                 handleClose={closeModal} 
