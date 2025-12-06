@@ -28,6 +28,7 @@ const ManageUsers = ({ showAlert }) => {
     const [filteredUsers, setFilteredUsers] = useState([]); 
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeFilter, setActiveFilter] = useState('All'); // Added activeFilter state
     
     const [modalConfig, setModalConfig] = useState({
         show: false,
@@ -72,18 +73,26 @@ const ManageUsers = ({ showAlert }) => {
     }, [getUsers]);
 
     useEffect(() => {
-        if (searchTerm.trim() === '') {
-            setFilteredUsers(users);
-        } else {
+        let result = users;
+
+        // Filter by Role
+        if (activeFilter === 'Admins') {
+            result = result.filter(u => u.is_admin);
+        }
+
+        // Filter by Search
+        if (searchTerm.trim() !== '') {
             const term = searchTerm.toLowerCase();
-            setFilteredUsers(users.filter(u => 
+            result = result.filter(u => 
                 u.first_name.toLowerCase().includes(term) || 
                 u.last_name.toLowerCase().includes(term) || 
                 u.email.toLowerCase().includes(term)
-            ));
+            );
         }
+
+        setFilteredUsers(result);
         setCurrentPage(1); 
-    }, [searchTerm, users]);
+    }, [searchTerm, users, activeFilter]);
 
     const openRoleModal = (user) => {
         const isPromoting = !user.is_admin;
@@ -168,6 +177,64 @@ const ManageUsers = ({ showAlert }) => {
         window.scrollTo(0, 0);
     };
 
+    const renderPaginationItems = () => {
+        const items = [];
+        
+        const createItem = (number) => (
+            <Pagination.Item 
+                key={number} 
+                active={number === currentPage} 
+                onClick={() => paginate(number)}
+                className="custom-page-item"
+            >
+                {number}
+            </Pagination.Item>
+        );
+
+        const createEllipsis = (key) => (
+            <Pagination.Item 
+                key={key}
+                disabled
+                className="custom-page-item"
+            >
+                ...
+            </Pagination.Item>
+        );
+
+        if (totalPages <= 7) {
+            for (let number = 1; number <= totalPages; number++) {
+                items.push(createItem(number));
+            }
+        } else {
+            items.push(createItem(1));
+
+            if (currentPage > 4) {
+                items.push(createEllipsis('start-ellipsis'));
+            }
+
+            let startPage = Math.max(2, currentPage - 1);
+            let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+            if (currentPage <= 4) {
+                endPage = 5;
+            }
+            if (currentPage >= totalPages - 3) {
+                startPage = totalPages - 4;
+            }
+
+            for (let number = startPage; number <= endPage; number++) {
+                items.push(createItem(number));
+            }
+
+            if (currentPage < totalPages - 3) {
+                items.push(createEllipsis('end-ellipsis'));
+            }
+
+            items.push(createItem(totalPages));
+        }
+        return items;
+    };
+
     if (isLoading) {
         return (
             <div className="order-history-container d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
@@ -176,8 +243,48 @@ const ManageUsers = ({ showAlert }) => {
         );
     }
 
+    const filterOptions = ['All', 'Admins'];
+
     return (
         <div className="order-history-container" style={{ maxWidth: '1200px' }}>
+            <style>
+                {`
+                    .custom-page-item .page-link {
+                        color: #198754;
+                        border-color: #dee2e6;
+                        border-radius: 50%;
+                        width: 40px;
+                        height: 40px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 3px;
+                        font-weight: 600;
+                        cursor: pointer;
+                    }
+                    .custom-page-item.active .page-link {
+                        background-color: #198754 !important;
+                        border-color: #198754 !important;
+                        color: white !important;
+                    }
+                    .custom-page-item .page-link:hover {
+                        background-color: #e8f5e9;
+                        border-color: #198754;
+                        color: #198754;
+                    }
+                    .custom-page-item.active .page-link:hover {
+                        background-color: #157347 !important;
+                        color: white !important;
+                    }
+                    .custom-page-item.disabled .page-link {
+                        background-color: #fff !important;
+                        color: #6c757d !important;
+                        border-color: #dee2e6 !important;
+                        cursor: default !important;
+                    }
+                `}
+            </style>
+
             <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <h1 className="mb-0 border-0 p-0">Manage Users</h1>
             </div>
@@ -207,7 +314,7 @@ const ManageUsers = ({ showAlert }) => {
                 </Col>
             </Row>
             
-            <div className="order-search-container">
+            <div className="order-search-container mb-4">
                 <input 
                     type="text" 
                     className="order-search-input" 
@@ -215,6 +322,33 @@ const ManageUsers = ({ showAlert }) => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+            </div>
+
+            <div className="d-flex flex-wrap gap-2 mb-4">
+                {filterOptions.map((option) => {
+                    const count = option === 'All' ? users.length : users.filter(u => u.is_admin).length;
+                    const isActive = activeFilter === option;
+                    
+                    return (
+                        <Button 
+                            key={option}
+                            variant={isActive ? 'success' : 'outline-success'}
+                            size="sm"
+                            className={`rounded-pill px-3 fw-bold ${isActive ? 'shadow-sm' : ''}`}
+                            onClick={() => setActiveFilter(option)}
+                            style={{ transition: 'all 0.2s' }}
+                        >
+                            {option} 
+                            <Badge 
+                                bg={isActive ? 'white' : 'success'} 
+                                text={isActive ? 'success' : 'white'} 
+                                className="ms-2 rounded-circle"
+                            >
+                                {count}
+                            </Badge>
+                        </Button>
+                    );
+                })}
             </div>
 
             {filteredUsers.length === 0 ? (
@@ -288,25 +422,19 @@ const ManageUsers = ({ showAlert }) => {
                     </Row>
 
                     {totalPages > 1 && (
-                        <div className="d-flex justify-content-center mt-4">
+                        <div className="d-flex justify-content-center mt-4 pb-5">
                             <Pagination>
-                                <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
-                                {totalPages <= 10 ? (
-                                    [...Array(totalPages)].map((_, index) => (
-                                        <Pagination.Item key={index + 1} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                                            {index + 1}
-                                        </Pagination.Item>
-                                    ))
-                                ) : (
-                                    <>
-                                        <Pagination.Item active={1 === currentPage} onClick={() => paginate(1)}>1</Pagination.Item>
-                                        {currentPage > 3 && <Pagination.Ellipsis />}
-                                        {currentPage > 1 && currentPage < totalPages && <Pagination.Item active>{currentPage}</Pagination.Item>}
-                                        {currentPage < totalPages - 2 && <Pagination.Ellipsis />}
-                                        <Pagination.Item active={totalPages === currentPage} onClick={() => paginate(totalPages)}>{totalPages}</Pagination.Item>
-                                    </>
-                                )}
-                                <Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
+                                <Pagination.Prev 
+                                    onClick={() => paginate(currentPage - 1)} 
+                                    disabled={currentPage === 1} 
+                                    className="custom-page-item"
+                                />
+                                {renderPaginationItems()}
+                                <Pagination.Next 
+                                    onClick={() => paginate(currentPage + 1)} 
+                                    disabled={currentPage === totalPages} 
+                                    className="custom-page-item"
+                                />
                             </Pagination>
                         </div>
                     )}

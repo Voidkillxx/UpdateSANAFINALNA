@@ -21,7 +21,7 @@ class OrderFactory extends Factory
             'shipping_fee' => $shippingFee,
             'total_amount' => $subtotal + $shippingFee, 
             
-            'status' => fake()->randomElement(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']),
+            'status' => fake()->randomElement(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled','Completed']),
             'payment_type' => fake()->randomElement(['Card', 'Cash On Delivery']),
             'shipping_address' => fake()->address(),
         ];

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Spinner, Form, Row, Col, Card, Badge, Nav, Pagination, Button } from 'react-bootstrap'; 
+import { Spinner, Form, Row, Col, Card, Badge, Pagination, Button } from 'react-bootstrap'; 
 import { fetchOrders, updateOrderStatus } from '../utils/api';
 import '../Styles/OrderHistory.css'; 
 
@@ -11,8 +11,8 @@ const formatToPesos = (amount) => {
     }).format(amount);
 };
 
-const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested'];
-const TERMINAL_STATES = ['Delivered', 'Cancelled'];
+const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
+const TERMINAL_STATES = ['Completed','Delivered' ,'Cancelled'];
 
 const ManageOrders = ({ showAlert }) => { 
     const [allOrders, setAllOrders] = useState([]); 
@@ -36,7 +36,7 @@ const ManageOrders = ({ showAlert }) => {
             setAllOrders(sortedData);
             
             const revenue = sortedData
-                .filter(o => o.status === 'Delivered' || o.status === 'Completed') 
+                .filter(o => o.status === 'Completed') 
                 .reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
             
             const pending = sortedData.filter(o => o.status === 'Pending').length;
@@ -125,6 +125,64 @@ const ManageOrders = ({ showAlert }) => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+    const renderPaginationItems = () => {
+        const items = [];
+        
+        const createItem = (number) => (
+            <Pagination.Item 
+                key={number} 
+                active={number === currentPage} 
+                onClick={() => paginate(number)}
+                className="custom-page-item"
+            >
+                {number}
+            </Pagination.Item>
+        );
+
+        const createEllipsis = (key) => (
+            <Pagination.Item 
+                key={key}
+                disabled
+                className="custom-page-item"
+            >
+                ...
+            </Pagination.Item>
+        );
+
+        if (totalPages <= 7) {
+            for (let number = 1; number <= totalPages; number++) {
+                items.push(createItem(number));
+            }
+        } else {
+            items.push(createItem(1));
+
+            if (currentPage > 4) {
+                items.push(createEllipsis('start-ellipsis'));
+            }
+
+            let startPage = Math.max(2, currentPage - 1);
+            let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+            if (currentPage <= 4) {
+                endPage = 5;
+            }
+            if (currentPage >= totalPages - 3) {
+                startPage = totalPages - 4;
+            }
+
+            for (let number = startPage; number <= endPage; number++) {
+                items.push(createItem(number));
+            }
+
+            if (currentPage < totalPages - 3) {
+                items.push(createEllipsis('end-ellipsis'));
+            }
+
+            items.push(createItem(totalPages));
+        }
+        return items;
+    };
+
     const renderOrderItems = (orderItems) => (
         <ul className="order-items-list">
             {orderItems.map(item => (
@@ -145,8 +203,48 @@ const ManageOrders = ({ showAlert }) => {
         );
     }
 
+    const filterOptions = ['All', ...STATUS_OPTIONS, 'Return Requested'];
+
     return (
         <div className="order-history-container" style={{ maxWidth: '1200px' }}>
+            <style>
+                {`
+                    .custom-page-item .page-link {
+                        color: #198754;
+                        border-color: #dee2e6;
+                        border-radius: 50%;
+                        width: 40px;
+                        height: 40px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 3px;
+                        font-weight: 600;
+                        cursor: pointer;
+                    }
+                    .custom-page-item.active .page-link {
+                        background-color: #198754 !important;
+                        border-color: #198754 !important;
+                        color: white !important;
+                    }
+                    .custom-page-item .page-link:hover {
+                        background-color: #e8f5e9;
+                        border-color: #198754;
+                        color: #198754;
+                    }
+                    .custom-page-item.active .page-link:hover {
+                        background-color: #157347 !important;
+                        color: white !important;
+                    }
+                    .custom-page-item.disabled .page-link {
+                        background-color: #fff !important;
+                        color: #6c757d !important;
+                        border-color: #dee2e6 !important;
+                        cursor: default !important;
+                    }
+                `}
+            </style>
+
             <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <h1 className="mb-0 border-0 p-0">Manage Orders</h1>
             </div>
@@ -155,9 +253,8 @@ const ManageOrders = ({ showAlert }) => {
                 <Col md={4}>
                     <Card className="border-0 shadow-sm" style={{ backgroundColor: '#e8f5e9' }}>
                         <Card.Body className="text-center">
-                            <h6 className="text-success text-uppercase fw-bold mb-1">Realized Revenue</h6>
+                            <h6 className="text-success text-uppercase fw-bold mb-1">Total Revenue</h6>
                             <h3 className="mb-0 fw-bold text-dark">{formatToPesos(stats.totalRevenue)}</h3>
-                            <small className="text-muted" style={{ fontSize: '0.75rem' }}>(Delivered Orders Only)</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -183,7 +280,7 @@ const ManageOrders = ({ showAlert }) => {
                 </Col>
             </Row>
             
-            <div className="order-search-container">
+            <div className="order-search-container mb-4">
                 <input 
                     type="text" 
                     className="order-search-input" 
@@ -193,19 +290,32 @@ const ManageOrders = ({ showAlert }) => {
                 />
             </div>
 
-            <Nav variant="tabs" defaultActiveKey="All" className="order-status-tabs">
-                {['All', ...STATUS_OPTIONS].map((status) => (
-                    <Nav.Item key={status}>
-                        <Nav.Link 
-                            eventKey={status} 
-                            active={activeFilter === status} 
+            <div className="d-flex flex-wrap gap-2 mb-4">
+                {filterOptions.map((status) => {
+                    const count = allOrders.filter(o => status === 'All' ? true : o.status === status).length;
+                    const isActive = activeFilter === status;
+                    
+                    return (
+                        <Button 
+                            key={status}
+                            variant={isActive ? 'success' : 'outline-success'}
+                            size="sm"
+                            className={`rounded-pill px-3 fw-bold ${isActive ? 'shadow-sm' : ''}`}
                             onClick={() => setActiveFilter(status)}
+                            style={{ transition: 'all 0.2s' }}
                         >
-                            {status} ({allOrders.filter(o => status === 'All' ? true : o.status === status).length})
-                        </Nav.Link>
-                    </Nav.Item>
-                ))}
-            </Nav>
+                            {status} 
+                            <Badge 
+                                bg={isActive ? 'white' : 'success'} 
+                                text={isActive ? 'success' : 'white'} 
+                                className="ms-2 rounded-circle"
+                            >
+                                {count}
+                            </Badge>
+                        </Button>
+                    );
+                })}
+            </div>
 
             {filteredOrders.length === 0 ? (
                 <div className="text-center py-5"><h4 className="text-muted">No orders found.</h4></div>
@@ -325,15 +435,19 @@ const ManageOrders = ({ showAlert }) => {
                     </Row>
 
                     {totalPages > 1 && (
-                        <div className="d-flex justify-content-center mt-4">
+                        <div className="d-flex justify-content-center mt-4 pb-5">
                             <Pagination>
-                                <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
-                                {[...Array(totalPages)].map((_, index) => (
-                                    <Pagination.Item key={index + 1} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                                        {index + 1}
-                                    </Pagination.Item>
-                                ))}
-                                <Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
+                                <Pagination.Prev 
+                                    onClick={() => paginate(currentPage - 1)} 
+                                    disabled={currentPage === 1} 
+                                    className="custom-page-item"
+                                />
+                                {renderPaginationItems()}
+                                <Pagination.Next 
+                                    onClick={() => paginate(currentPage + 1)} 
+                                    disabled={currentPage === totalPages} 
+                                    className="custom-page-item"
+                                />
                             </Pagination>
                         </div>
                     )}
