@@ -12,7 +12,7 @@ const formatToPesos = (amount) => {
 };
 
 const STATUS_OPTIONS = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Requested'];
-const TERMINAL_STATES = ['Delivered', 'Cancelled'];
+const TERMINAL_STATES = ['Delivered', 'Cancelled', 'Completed'];
 
 const ManageOrders = ({ showAlert }) => { 
     const [allOrders, setAllOrders] = useState([]); 
